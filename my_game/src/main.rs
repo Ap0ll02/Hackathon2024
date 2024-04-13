@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::math::primitives::Plane3d;
 
 #[derive(Component)]
 struct Ship;
@@ -7,7 +8,7 @@ struct Ship;
 struct Skull;
 
 #[derive(Component)]
-struct ground;
+struct Ground;
 
 #[derive(Component)]
 struct Physics {
@@ -41,7 +42,8 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<ColorMaterial>>) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,) {
     // Adding a light
     commands.spawn(DirectionalLightBundle{
         directional_light: DirectionalLight {
@@ -74,11 +76,24 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         ..default()
     }).insert(Skull)
     .insert(Physics { speed: 4.0, ..Default::default() });
+
+    // Ground
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Mesh::from(Plane3d { normal: Direction3d::new(Vec3::Y).expect("What the hell"), ..Default::default()})),
+        material: materials.add(StandardMaterial {
+            base_color: Color::GRAY,
+            base_color_texture: Some(asset_server.load("Floor.png")),
+            ..Default::default()
+        }),
+        transform: Transform::from_scale(Vec3::new(100.0, 1.0, 100.0)).with_translation(Vec3::new(0.0, -3.0, 0.0)),
+        ..Default::default()
+    }).insert(Ground);
+
 }
 
 
 fn input_system(input: Res<ButtonInput<KeyCode>>, mut query: Query<(&Skull, &mut Transform, &mut Physics)>, time: Res<Time>) {
-    // Moving the ship
+    // Moving the skull entity {W, A, S, D}
     if input.pressed(KeyCode::KeyW) {
         for(_skull, mut transform, mut physics) in query.iter_mut() {
             transform.translation.z -= physics.speed * time.delta_seconds();
