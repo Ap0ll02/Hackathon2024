@@ -25,12 +25,16 @@ impl Default for Physics {
 }
 
 fn main() {
+    let app_window = Some(Window {
+        title: "Hackathon 2024".into(),
+        ..default()
+    });
+
     App::new()
-        .insert_resource(WindowDescriptor {
-            title: "Biggest Little Hackathon 2024".to_string(),
-            ..Default::default()
-        })
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: app_window,
+            ..default()
+        }))
         .insert_resource(ClearColor(Color::rgb_u8(155, 202, 224)))
         .add_systems(Startup, setup)
         .add_systems(Update, input_system)
@@ -58,11 +62,11 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
     // Making the entities {Ship, Skull, Ground}
 
     // Ship
-    // commands.spawn(SceneBundle {
-    //     scene: asset_server.load("VikingShip.glb#Scene0"),
-    //     ..default()
-    // }).insert(Ship)
-    // .insert(Physics { speed: 3.0, ..Default::default() });
+    commands.spawn(SceneBundle {
+        scene: asset_server.load("VikingShip.glb#Scene0"),
+        ..default()
+    }).insert(Ship)
+    .insert(Physics { speed: 3.0, ..Default::default() });
 
     // Skull
     commands.spawn(SceneBundle {
@@ -73,25 +77,25 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
 }
 
 
-fn input_system(input: Res<ButtonInput<KeyCode>>, mut query: Query<(&Ship, &mut Transform, &mut Physics)>, time: Res<Time>) {
+fn input_system(input: Res<ButtonInput<KeyCode>>, mut query: Query<(&Skull, &mut Transform, &mut Physics)>, time: Res<Time>) {
     // Moving the ship
     if input.pressed(KeyCode::KeyW) {
-        for(_ship, mut transform, mut physics) in query.iter_mut() {
+        for(_skull, mut transform, mut physics) in query.iter_mut() {
             transform.translation.z -= physics.speed * time.delta_seconds();
         }
     }
     if input.pressed(KeyCode::KeyS) {
-        for(_ship, mut transform, mut physics) in query.iter_mut() {
+        for(_skull, mut transform, mut physics) in query.iter_mut() {
             transform.translation.z += physics.speed * time.delta_seconds();
         }
     }
     if input.pressed(KeyCode::KeyA) {
-        for(_ship, mut transform, mut physics) in query.iter_mut() {
+        for(_skull, mut transform, mut physics) in query.iter_mut() {
             transform.translation.x -= physics.speed * time.delta_seconds();
         }
     }
     if input.pressed(KeyCode::KeyD) {
-        for(_ship, mut transform, mut physics) in query.iter_mut() {
+        for(_skull, mut transform, mut physics) in query.iter_mut() {
             transform.translation.x += physics.speed * time.delta_seconds();
         }
     }
