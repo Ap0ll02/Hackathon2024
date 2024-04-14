@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier3d::prelude::*;
 use bevy::math::primitives::Plane3d;
 
 #[derive(Component)]
@@ -11,7 +12,7 @@ struct Skull;
 struct Ground;
 
 #[derive(Component)]
-struct Wall;
+struct Maze;
 
 #[derive(Component)]
 struct Physics {
@@ -41,6 +42,8 @@ fn main() {
             primary_window: app_window,
             ..default()
         }))
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
+        .add_plugins(RapierDebugRenderPlugin::default())
         .insert_resource(ClearColor(Color::rgb_u8(155, 202, 224)))
         .add_systems(Startup, setup)
         .add_systems(Update, input_system)
@@ -50,7 +53,10 @@ fn main() {
 // SYSTEMS:
 // Setup system, runs once
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,) {
+    mut meshes: ResMut<Assets<Mesh>>, mut rapier_config: ResMut<RapierConfiguration>,) {
+    // Physics engine config
+    rapier_config.gravity = Vec3::ZERO;
+
     // Adding a light
     commands.spawn(DirectionalLightBundle{
         directional_light: DirectionalLight {
@@ -64,26 +70,26 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
 
     // CAMERA: Adding a camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 50.0, 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
+        transform: Transform::from_xyz(0.0, 500.0, 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         ..default()
     });
 
-    // Making the entities {Ship, Skull, Ground}
-
-    // Ship
-    commands.spawn(SceneBundle {
-        scene: asset_server.load("VikingShip.glb#Scene0"),
-        ..default()
-    }).insert(Ship)
-    .insert(Physics { speed: 3.0, ..Default::default() })
-    .insert(Transform::from_translation(Vec3::new(25.0, 0.0, -9.0)));
+    // Making the entities {Skull (player), Ground, Maze}
 
     // Skull
     commands.spawn(SceneBundle {
         scene: asset_server.load("MetalSkull.glb#Scene0"),
         ..default()
     }).insert(Skull)
-    .insert(Physics { speed: 9.0, ..Default::default() });
+    .insert(Physics { speed: 9.0, ..Default::default() })
+    .insert_bundle(RigidBodyBundle {
+        position: Isometry::translation(0.0, 0.0, 0.0).into(),
+        ..Default::default()
+    })
+    .insert_bundle(ColliderBundle {
+        shape: ColliderShape::cuboid(1.0, 1.0, 1.0),
+        ..Default::default()
+    });
 
     // Ground
     commands.spawn(PbrBundle {
@@ -95,10 +101,23 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         }),
         transform: Transform::from_scale(Vec3::new(180.0, 1.0, 180.0)).with_translation(Vec3::new(0.0, -3.0, 0.0)),
         ..Default::default()
-    }).insert(Ground);
+    }).insert(Ground)
+    .insert(RigidBodyBundle {
+        position: Isometry::translation(0.0, -3.0, 0.0).into(),
+        ..Default::default()
+    })
+    .insert(ColliderBundle {
+        shape: ColliderShape::cuboid(180.0, 1.0, 180.0),
+        ..Default::default()
+    });
 
-    // TODO: Walls, Collision With Walls, Maze Start and Finish
-
+    // Maze
+    commands.spawn(SceneBundle {
+        scene: asset_server.load("Maze.glb#Scene0"),
+        ..default()
+    }).insert(Maze)
+    .insert(Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)));
+        
 }
 
 
