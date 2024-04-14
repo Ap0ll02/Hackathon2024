@@ -3,5 +3,5 @@ Entry for the UNR ACM Club Biggest Little Hackathon 2024
 
 
 ## Credits
-[Skull Model](https://skfb.ly/6rGQx)
-[Skull Model 2](https://skfb.ly/6UZ7G)
+[Third Person Camera Rust Crate](https://github.com/andrewcs149/bevy_third_person_camera)
+[Skull Model (Metallic Skull)](https://skfb.ly/6UZ7G)

@@ -1,6 +1,11 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 use bevy::math::primitives::Plane3d;
+use bevy_third_person_camera::*;
+use bevy_third_person_camera::camera::*;
+// use bevy_third_person_camera::controller::*;
+
+// Some credits listed here, for full list, please see README.md file
 
 #[derive(Component)]
 struct Skull;
@@ -16,6 +21,9 @@ struct Physics {
     velocity: Vec3,
     speed: f32,
 }
+
+#[derive(Component)]
+struct Controllable;
 
 impl Default for Physics {
     fn default() -> Self {
@@ -41,6 +49,7 @@ fn main() {
         }))
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
+        .add_plugins(ThirdPersonCameraPlugin)
         .insert_resource(ClearColor(Color::rgb_u8(155, 202, 224)))
         .add_systems(Startup, (setup_physics, setup).chain())
         .add_systems(Update, input_system)
@@ -66,11 +75,26 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         ..default()
     });
 
+    // Bevy Third Person Camera from AndrewCS149 
+    // (https://github.com/andrewcs149/bevy_third_person_camera)
+
     // CAMERA: Adding a camera
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(40.0, 1.0, 0.0).looking_at(Vec3::new(-40., 0., 0.), Vec3::Y),
-        ..default()
-    });
+    let camera = commands.spawn((
+        // Third Person Camera Settings
+        ThirdPersonCamera {
+            cursor_lock_toggle_enabled: true,
+            cursor_lock_active: true,
+            cursor_lock_key: KeyCode::Space,
+            mouse_sensitivity: 2.0,
+            mouse_orbit_button_enabled: false,
+            mouse_orbit_button: MouseButton::Middle,
+            offset_enabled: true,
+            offset: Offset::new(0.5, 0.4),
+            offset_toggle_speed: 5.0,
+            ..default()
+        },
+        Camera3dBundle::default(),
+    )).id();
 
     // Making the entities {Skull (player), Ground, Maze}
 
@@ -80,7 +104,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         ..default()
     }).insert(Skull)
     .insert(Collider::ball(1.0)) // Replace AsyncCollider::default() with this
-    .insert(Physics { speed: 9.0, ..Default::default() }).id();
+    .insert(Physics { speed: 9.0, ..Default::default() })
+    .insert(Controllable)
+    .insert(ThirdPersonCameraTarget)
+    .id();
 
     commands.entity(skull_entity)
         .insert(RigidBody::Dynamic)
@@ -132,25 +159,25 @@ fn setup_physics(mut commands: Commands) {
 }
 
 // Input System
-fn input_system(input: Res<ButtonInput<KeyCode>>, mut query: Query<(&Skull, &mut Transform, &Physics)>, time: Res<Time>) {
+fn input_system(input: Res<ButtonInput<KeyCode>>, mut query: Query<(&Controllable, &mut Transform, &Physics)>, time: Res<Time>) {
     // Moving the skull entity {W, A, S, D}
     if input.pressed(KeyCode::KeyW) {
-        for(_skull, mut transform, physics) in query.iter_mut() {
+        for(_controllable, mut transform, physics) in query.iter_mut() {
             transform.translation.x -= physics.speed * time.delta_seconds();
         }
     }
     if input.pressed(KeyCode::KeyS) {
-        for(_skull, mut transform, physics) in query.iter_mut() {
+        for(_controllable, mut transform, physics) in query.iter_mut() {
             transform.translation.x += physics.speed * time.delta_seconds();
         }
     }
     if input.pressed(KeyCode::KeyA) {
-        for(_skull, mut transform, physics) in query.iter_mut() {
+        for(_controllable, mut transform, physics) in query.iter_mut() {
             transform.translation.z += physics.speed * time.delta_seconds();
         }
     }
     if input.pressed(KeyCode::KeyD) {
-        for(_skull, mut transform, physics) in query.iter_mut() {
+        for(_controllable, mut transform, physics) in query.iter_mut() {
             transform.translation.z -= physics.speed * time.delta_seconds();
         }
     }
