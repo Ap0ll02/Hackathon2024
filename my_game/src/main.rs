@@ -11,6 +11,9 @@ struct Skull;
 struct Ground;
 
 #[derive(Component)]
+struct Wall;
+
+#[derive(Component)]
 struct Physics {
     velocity: Vec3,
     speed: f32,
@@ -26,11 +29,13 @@ impl Default for Physics {
 }
 
 fn main() {
+    // App Setup
     let app_window = Some(Window {
         title: "Hackathon 2024".into(),
         ..default()
     });
 
+    // APP
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: app_window,
@@ -42,6 +47,8 @@ fn main() {
         .run();
 }
 
+// SYSTEMS:
+// Setup system, runs once
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,) {
     // Adding a light
@@ -55,9 +62,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         ..default()
     });
 
-    // Adding a camera
+    // CAMERA: Adding a camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(35.0, 35.0, 35.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
+        transform: Transform::from_xyz(0.0, 50.0, 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
         ..default()
     });
 
@@ -68,14 +75,15 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         scene: asset_server.load("VikingShip.glb#Scene0"),
         ..default()
     }).insert(Ship)
-    .insert(Physics { speed: 3.0, ..Default::default() });
+    .insert(Physics { speed: 3.0, ..Default::default() })
+    .insert(Transform::from_translation(Vec3::new(25.0, 0.0, -9.0)));
 
     // Skull
     commands.spawn(SceneBundle {
         scene: asset_server.load("MetalSkull.glb#Scene0"),
         ..default()
     }).insert(Skull)
-    .insert(Physics { speed: 4.0, ..Default::default() });
+    .insert(Physics { speed: 9.0, ..Default::default() });
 
     // Ground
     commands.spawn(PbrBundle {
@@ -85,33 +93,36 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
             base_color_texture: Some(asset_server.load("Floor.png")),
             ..Default::default()
         }),
-        transform: Transform::from_scale(Vec3::new(100.0, 1.0, 100.0)).with_translation(Vec3::new(0.0, -3.0, 0.0)),
+        transform: Transform::from_scale(Vec3::new(180.0, 1.0, 180.0)).with_translation(Vec3::new(0.0, -3.0, 0.0)),
         ..Default::default()
     }).insert(Ground);
+
+    // TODO: Walls, Collision With Walls, Maze Start and Finish
 
 }
 
 
+// Input System
 fn input_system(input: Res<ButtonInput<KeyCode>>, mut query: Query<(&Skull, &mut Transform, &mut Physics)>, time: Res<Time>) {
     // Moving the skull entity {W, A, S, D}
     if input.pressed(KeyCode::KeyW) {
         for(_skull, mut transform, mut physics) in query.iter_mut() {
-            transform.translation.z -= physics.speed * time.delta_seconds();
+            transform.translation.x -= physics.speed * time.delta_seconds();
         }
     }
     if input.pressed(KeyCode::KeyS) {
         for(_skull, mut transform, mut physics) in query.iter_mut() {
-            transform.translation.z += physics.speed * time.delta_seconds();
+            transform.translation.x += physics.speed * time.delta_seconds();
         }
     }
     if input.pressed(KeyCode::KeyA) {
         for(_skull, mut transform, mut physics) in query.iter_mut() {
-            transform.translation.x -= physics.speed * time.delta_seconds();
+            transform.translation.z += physics.speed * time.delta_seconds();
         }
     }
     if input.pressed(KeyCode::KeyD) {
         for(_skull, mut transform, mut physics) in query.iter_mut() {
-            transform.translation.x += physics.speed * time.delta_seconds();
+            transform.translation.z -= physics.speed * time.delta_seconds();
         }
     }
 }
