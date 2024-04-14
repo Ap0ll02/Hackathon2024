@@ -3,7 +3,7 @@ use bevy_rapier3d::prelude::*;
 use bevy::math::primitives::Plane3d;
 use bevy_third_person_camera::*;
 use bevy_third_person_camera::camera::*;
-// use bevy_third_person_camera::controller::*;
+use bevy_third_person_camera::controller::*;
 
 // Some credits listed here, for full list, please see README.md file
 
@@ -17,22 +17,7 @@ struct Ground;
 struct Maze;
 
 #[derive(Component)]
-struct Physics {
-    velocity: Vec3,
-    speed: f32,
-}
-
-#[derive(Component)]
 struct Controllable;
-
-impl Default for Physics {
-    fn default() -> Self {
-        Physics {
-            velocity: [0.0, 0.0, 0.0].into(),
-            speed: 1.0,
-        }
-    }
-}
 
 fn main() {
     // App Setup
@@ -52,7 +37,6 @@ fn main() {
         .add_plugins(ThirdPersonCameraPlugin)
         .insert_resource(ClearColor(Color::rgb_u8(155, 202, 224)))
         .add_systems(Startup, (setup_physics, setup).chain())
-        .add_systems(Update, input_system)
         .run();
 }
 
@@ -75,6 +59,18 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         ..default()
     });
 
+    // More Lighting
+    commands.spawn(SpotLightBundle {
+        spot_light: SpotLight {
+            color: Color::rgb_u8(0, 0, 255),
+            range: 800.0,
+            radius: 800.0,
+            intensity: 100.0,
+            ..Default::default()
+        },
+        ..default()
+    });
+
     // Bevy Third Person Camera from AndrewCS149 
     // (https://github.com/andrewcs149/bevy_third_person_camera)
 
@@ -89,11 +85,16 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
             mouse_orbit_button_enabled: false,
             mouse_orbit_button: MouseButton::Middle,
             offset_enabled: true,
-            offset: Offset::new(1.0, 1.0),
-            offset_toggle_speed: 5.0,
+            offset: Offset::new(0.0, 1.0),
+            offset_toggle_speed: 8.0,
+            zoom_enabled: true,
+            zoom: Zoom::new(15.0, 15.0), 
             ..default()
         },
-        Camera3dBundle::default(),
+        Camera3dBundle {
+            transform: Transform::from_xyz(10.0, 8.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            ..default()
+        },
     )).id();
 
     // Making the entities {Skull (player), Ground, Maze}
@@ -104,9 +105,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         ..default()
     }).insert(Skull)
     .insert(Collider::ball(1.0)) // Replace AsyncCollider::default() with this
-    .insert(Physics { speed: 9.0, ..Default::default() })
     .insert(Controllable)
     .insert(ThirdPersonCameraTarget)
+    .insert(ThirdPersonController::default())
     .id();
 
     commands.entity(skull_entity)
@@ -157,29 +158,4 @@ fn setup_physics(mut commands: Commands) {
     // Ground
     commands.spawn(Collider::cuboid(100.0, 0.1, 100.0))
         .insert(Transform::from_xyz(0.0, -2.0, 0.0));
-}
-
-// Input System
-fn input_system(input: Res<ButtonInput<KeyCode>>, mut query: Query<(&Controllable, &mut Transform, &Physics)>, time: Res<Time>) {
-    // Moving the skull entity {W, A, S, D}
-    if input.pressed(KeyCode::KeyW) {
-        for(_controllable, mut transform, physics) in query.iter_mut() {
-            transform.translation.x -= physics.speed * time.delta_seconds();
-        }
-    }
-    if input.pressed(KeyCode::KeyS) {
-        for(_controllable, mut transform, physics) in query.iter_mut() {
-            transform.translation.x += physics.speed * time.delta_seconds();
-        }
-    }
-    if input.pressed(KeyCode::KeyA) {
-        for(_controllable, mut transform, physics) in query.iter_mut() {
-            transform.translation.z += physics.speed * time.delta_seconds();
-        }
-    }
-    if input.pressed(KeyCode::KeyD) {
-        for(_controllable, mut transform, physics) in query.iter_mut() {
-            transform.translation.z -= physics.speed * time.delta_seconds();
-        }
-    }
 }
