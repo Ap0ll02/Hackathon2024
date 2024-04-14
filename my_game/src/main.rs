@@ -89,7 +89,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
             mouse_orbit_button_enabled: false,
             mouse_orbit_button: MouseButton::Middle,
             offset_enabled: true,
-            offset: Offset::new(0.5, 0.4),
+            offset: Offset::new(1.0, 1.0),
             offset_toggle_speed: 5.0,
             ..default()
         },
@@ -114,7 +114,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         .insert(Collider::ball(1.0))
         .insert(GravityScale(1.0))
         .insert(LockedAxes::TRANSLATION_LOCKED | LockedAxes::ROTATION_LOCKED_X)
-        .insert(Transform::from_xyz(30.0, 0.0, 8.0));
+        .insert(Transform::from_xyz(30.0, 0.0, 8.0))
+        .insert(Transform::from_rotation(Quat::from_rotation_y(90.0)));
 
     // Ground
     let ground = commands.spawn(PbrBundle {
