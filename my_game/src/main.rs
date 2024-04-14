@@ -45,7 +45,7 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugins(RapierDebugRenderPlugin::default())
         .insert_resource(ClearColor(Color::rgb_u8(155, 202, 224)))
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (setup_physics, setup).chain())
         .add_systems(Update, input_system)
         .run();
 }
@@ -70,29 +70,25 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
 
     // CAMERA: Adding a camera
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0.0, 500.0, 0.0).looking_at(Vec3::new(0., 0., 0.), Vec3::Y),
+        transform: Transform::from_xyz(0.0, 75.0, 0.0).looking_at(Vec3::new(20., 0., 0.), Vec3::Y),
         ..default()
     });
 
     // Making the entities {Skull (player), Ground, Maze}
 
     // Skull
-    commands.spawn(SceneBundle {
+    let skull_entity = commands.spawn(SceneBundle {
         scene: asset_server.load("MetalSkull.glb#Scene0"),
         ..default()
     }).insert(Skull)
-    .insert(Physics { speed: 9.0, ..Default::default() })
-    .insert_bundle(RigidBodyBundle {
-        position: Isometry::translation(0.0, 0.0, 0.0).into(),
-        ..Default::default()
-    })
-    .insert_bundle(ColliderBundle {
-        shape: ColliderShape::cuboid(1.0, 1.0, 1.0),
-        ..Default::default()
-    });
+    .insert(Physics { speed: 9.0, ..Default::default() }).id();
 
+    commands.entity(skull_entity)
+            .insert(RigidBody::Dynamic)
+            .insert(Transform::from_xyz(0.0, 5.0, 0.0))
+            .insert(LockedAxes::TRANSLATION_LOCKED | LockedAxes::ROTATION_LOCKED_X);
     // Ground
-    commands.spawn(PbrBundle {
+    let ground = commands.spawn(PbrBundle {
         mesh: meshes.add(Mesh::from(Plane3d { normal: Direction3d::new(Vec3::Y).expect("What the hell"), ..Default::default()})),
         material: materials.add(StandardMaterial {
             base_color: Color::GRAY,
@@ -101,23 +97,37 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
         }),
         transform: Transform::from_scale(Vec3::new(180.0, 1.0, 180.0)).with_translation(Vec3::new(0.0, -3.0, 0.0)),
         ..Default::default()
-    }).insert(Ground)
-    .insert(RigidBodyBundle {
-        position: Isometry::translation(0.0, -3.0, 0.0).into(),
-        ..Default::default()
-    })
-    .insert(ColliderBundle {
-        shape: ColliderShape::cuboid(180.0, 1.0, 180.0),
-        ..Default::default()
-    });
+    }).insert(Ground).id();
+
+    commands.entity(ground)
+            .insert(RigidBody::Fixed);
 
     // Maze
-    commands.spawn(SceneBundle {
+    let maze_entity = commands.spawn(SceneBundle {
         scene: asset_server.load("Maze.glb#Scene0"),
         ..default()
-    }).insert(Maze)
-    .insert(Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)));
+    }).insert(Maze).id();
         
+    commands.entity(maze_entity)
+            .insert(RigidBody::Fixed)
+            .insert(Transform::from_xyz(0.0, 5.0, 0.0));
+}
+
+fn setup_physics(mut commands: Commands) {
+    // Ground
+    commands.spawn(Collider::cuboid(100.0, 0.1, 100.0))
+        .insert(Transform::from_xyz(0.0, -2.0, 0.0));
+
+    // Player
+    commands.spawn(RigidBody::Dynamic)
+        .insert(Transform::from_xyz(0.0, 5.0, 0.0))
+        .insert(GravityScale(1.0))
+        .insert(LockedAxes::TRANSLATION_LOCKED | LockedAxes::ROTATION_LOCKED_X);
+
+    // Maze
+    commands.spawn(RigidBody::Fixed)
+        .insert(Transform::from_xyz(0.0, 5.0, 0.0))
+        .insert(LockedAxes::TRANSLATION_LOCKED | LockedAxes::ROTATION_LOCKED_X);
 }
 
 
