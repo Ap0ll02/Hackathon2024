@@ -107,7 +107,10 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut materials: 
     .insert(Collider::ball(1.0)) // Replace AsyncCollider::default() with this
     .insert(Controllable)
     .insert(ThirdPersonCameraTarget)
-    .insert(ThirdPersonController::default())
+    .insert(ThirdPersonController{
+        speed: 5.0,
+        ..default()
+    })
     .id();
 
     commands.entity(skull_entity)
