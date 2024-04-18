@@ -61,7 +61,3 @@ _The standalone executable is not currently ready, as assets need to be bundled 
 [Third Person Camera Rust Crate](https://github.com/andrewcs149/bevy_third_person_camera)
 
 [Skull Model (Metallic Skull)](https://skfb.ly/6UZ7G)
-
-```
-
-```
